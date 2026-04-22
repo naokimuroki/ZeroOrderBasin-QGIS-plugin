@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ZeroOrderBasinDialog</class>
+ <widget class="QDialog" name="ZeroOrderBasinDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>850</width>
+    <height>350</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>ZeroOrderBasin</string>
+  </property>
+
+  <layout class="QVBoxLayout">
+   <property name="spacing">
+    <number>6</number>
+   </property>
+
+   <!-- 上段 -->
+   <item>
+    <layout class="QHBoxLayout">
+
+     <!-- 左：操作 -->
+     <item>
+      <widget class="QTabWidget" name="tabWidget">
+
+       <!-- Step1 -->
+       <widget class="QWidget" name="tab1">
+        <attribute name="title">
+         <string>Step1</string>
+        </attribute>
+
+        <layout class="QVBoxLayout">
+         <property name="spacing"><number>4</number></property>
+
+         <item>
+          <layout class="QFormLayout">
+           <property name="spacing"><number>4</number></property>
+
+           <item row="0" column="0">
+            <widget class="QLabel">
+             <property name="text">
+              <string>DEM選択</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QComboBox" name="inputDEM"/>
+           </item>
+
+           <item row="1" column="0">
+            <widget class="QLabel">
+             <property name="text">
+              <string>接峰面ラスタの平滑化サイズ(m)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QDoubleSpinBox" name="spinScale">
+             <property name="minimum"><double>1</double></property>
+             <property name="maximum"><double>50</double></property>
+             <property name="value"><double>5</double></property>
+            </widget>
+           </item>
+
+           <item row="2" column="0">
+            <widget class="QLabel">
+             <property name="text">
+              <string>接峰面ラスタの解像度(m)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QDoubleSpinBox" name="spinRes">
+             <property name="minimum"><double>1</double></property>
+             <property name="maximum"><double>50</double></property>
+             <property name="value"><double>5</double></property>
+            </widget>
+           </item>
+
+           <item row="3" column="0">
+            <widget class="QLabel">
+             <property name="text">
+              <string>曲率閾値(谷とみなす範囲)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QDoubleSpinBox" name="spinCurv">
+             <property name="minimum"><double>-10</double></property>
+             <property name="maximum"><double>0</double></property>
+             <property name="singleStep"><double>0.1</double></property>
+             <property name="value"><double>-1.0</double></property>
+            </widget>
+           </item>
+
+          </layout>
+         </item>
+
+         <item>
+          <spacer>
+           <property name="orientation"><enum>Qt::Vertical</enum></property>
+           <property name="sizeHint">
+            <size><width>20</width><height>20</height></size>
+           </property>
+          </spacer>
+         </item>
+
+         <item>
+          <widget class="QPushButton" name="btnStep1">
+           <property name="text">
+            <string>Step1 実行</string>
+           </property>
+          </widget>
+         </item>
+
+        </layout>
+       </widget>
+
+       <!-- Step2 -->
+       <widget class="QWidget" name="tab2">
+        <attribute name="title">
+         <string>Step2</string>
+        </attribute>
+
+        <layout class="QVBoxLayout">
+         <property name="spacing"><number>4</number></property>
+
+         <item>
+          <layout class="QFormLayout">
+           <property name="spacing"><number>4</number></property>
+
+           <item row="0" column="0">
+            <widget class="QLabel">
+             <property name="text">
+              <string>DEM選択(Step1と同じものを選択)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QComboBox" name="inputDEM2"/>
+           </item>
+
+           <item row="1" column="0">
+            <widget class="QLabel">
+             <property name="text">
+              <string>DEMと接峰面との差分ラスタ(Step1の生成物)を選択</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="inputDifDEM"/>
+           </item>
+
+           <item row="2" column="0">
+            <widget class="QLabel">
+             <property name="text">
+              <string>流路ラスタ抽出の閾値</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QSpinBox" name="spinFlow">
+             <property name="minimum"><number>1</number></property>
+             <property name="maximum"><number>100000</number></property>
+             <property name="value"><number>400</number></property>
+            </widget>
+           </item>
+
+           <item row="3" column="0">
+            <widget class="QLabel">
+             <property name="text">
+              <string>谷ラスタ抽出の閾値</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QDoubleSpinBox" name="spinValley">
+             <property name="minimum"><double>-10</double></property>
+             <property name="maximum"><double>0</double></property>
+             <property name="singleStep"><double>0.1</double></property>
+             <property name="value"><double>-1.5</double></property>
+            </widget>
+           </item>
+
+          </layout>
+         </item>
+
+         <item>
+          <spacer>
+           <property name="orientation"><enum>Qt::Vertical</enum></property>
+           <property name="sizeHint">
+            <size><width>20</width><height>20</height></size>
+           </property>
+          </spacer>
+         </item>
+
+         <item>
+          <widget class="QPushButton" name="btnStep2">
+           <property name="text">
+            <string>Step2 実行</string>
+           </property>
+          </widget>
+         </item>
+
+        </layout>
+       </widget>
+
+       <!-- Step3 -->
+       <widget class="QWidget" name="tab3">
+        <attribute name="title"><string>Step3</string></attribute>
+
+        <layout class="QVBoxLayout">
+         <property name="spacing"><number>4</number></property>
+
+         <item>
+          <layout class="QFormLayout">
+           <property name="spacing"><number>4</number></property>
+
+           <item row="0" column="0">
+            <widget class="QLabel">
+             <property name="text">
+              <string>河川次数ラスタ(Step2の生成物=OUTPUT_ORDER)を選択</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QComboBox" name="inputOrder"/>
+           </item>
+
+           <item row="1" column="0">
+            <widget class="QLabel">
+             <property name="text">
+              <string>用いる河川次数ラスタの最小値</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="spinOrderMin"/>
+           </item>
+
+           <item row="2" column="0">
+            <widget class="QLabel">
+             <property name="text">
+              <string>用いる河川次数ラスタの最大値</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QSpinBox" name="spinOrderMax"/>
+           </item>
+
+           <item row="3" column="0">
+            <widget class="QLabel">
+             <property name="text">
+              <string>流送域の幅(m)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QDoubleSpinBox" name="spinBuffer"/>
+           </item>
+
+          </layout>
+         </item>
+
+         <!-- 非表示部分はそのまま -->
+         <item>
+          <widget class="QLabel">
+           <property name="visible"><bool>false</bool></property>
+           <property name="text"><string>ZOBポリゴン保存先</string></property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="outputZOB">
+           <property name="visible"><bool>false</bool></property>
+          </widget>
+         </item>
+
+         <item>
+          <widget class="QLabel">
+           <property name="visible"><bool>false</bool></property>
+           <property name="text"><string>流送域ポリゴン保存先</string></property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="outputBuffer">
+           <property name="visible"><bool>false</bool></property>
+          </widget>
+         </item>
+
+         <item>
+          <spacer>
+           <property name="orientation"><enum>Qt::Vertical</enum></property>
+           <property name="sizeHint">
+            <size><width>20</width><height>20</height></size>
+           </property>
+          </spacer>
+         </item>
+
+         <item>
+          <widget class="QPushButton" name="btnStep3">
+           <property name="text">
+            <string>Step3 実行</string>
+           </property>
+          </widget>
+         </item>
+
+        </layout>
+       </widget>
+
+      </widget>
+     </item>
+
+     <!-- 右：説明 -->
+     <item>
+      <widget class="QTextEdit" name="textHelp">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+
+    </layout>
+   </item>
+
+   <!-- 進捗バー -->
+   <item>
+    <widget class="QProgressBar" name="progressBar">
+     <property name="minimum"><number>0</number></property>
+     <property name="maximum"><number>100</number></property>
+     <property name="value"><number>0</number></property>
+     <property name="textVisible"><bool>true</bool></property>
+    </widget>
+   </item>
+
+   <!-- 以下ヘルプは完全そのまま -->
+   <item>
+    <widget class="QLabel" name="labelHelp1">
+     <property name="visible"><bool>false</bool></property>
+     <property name="text"><string>
+Step1 補足説明
+DEMから接峰面ラスタを生成し、両者の差分ラスタを作成する工程
+
+★ Step1が最も処理に時間がかかります...諦めない ★
+
+1. 平滑化サイズ(m) | 推奨: 5-20
+   小( 5)  解像度 5m, 微地形を考慮した接峰面ラスタを生成
+   大(20)  解像度20m, 微地形を排除した接峰面ラスタを生成
+
+   【注意】
+    高精細なDEMを用意しても、5mくらいで実行しないと、ノイズが多い。
+
+2. 接峰面ラスタの解像度(m)
+   1.で設定した平滑化サイズに揃える
+
+3. 曲率閾値（谷とみなす範囲）
+   小(-1.0)→ 急な凹地形のみを谷とみる
+   大(-0.2)→ 緩やかな凹地形も谷とみる
+
+   【補足】
+    閾値が大きい（0に近い）と、斜面上部や平坦箇所も谷とみなされる。
+    地形にもよるが、拾い過ぎと感じるときは、-1.0よりも小さくしてもよい。
+      </string></property>
+    </widget>
+   </item>
+
+   <item>
+    <widget class="QLabel" name="labelHelp2">
+     <property name="visible"><bool>false</bool></property>
+     <property name="text"><string>
+Step2 補足説明
+DEMから流路と河川次数、差分ラスタから谷地形を抽出する工程
+
+1. 流路ラスタ抽出の閾値 | 推奨: 400-2,000(5m解像度の場合)
+   小(  400)   400pix(5m解像度なら1.0ha)の集水量があれば流路とみる
+   大(2,000) 2,000pix(5m解像度なら5.0ha)の集水量があれば流路とみる
+
+2. 谷ラスタ抽出の閾値 | 推奨: -0.5 から -2.0
+   小(-2.0) 深い凹地形のみを谷として抽出する
+   大(-0.5) 浅い凹地形も谷として抽出する
+   
+   【補足】
+    閾値が大きい（0に近い）と、斜面上部や平坦箇所も谷とみなされる。
+    地形にもよるが、拾い過ぎなときは、-2.0よりも小さくしてもよい。
+      </string></property>
+    </widget>
+   </item>
+
+   <item>
+    <widget class="QLabel" name="labelHelp3">
+     <property name="visible"><bool>false</bool></property>
+     <property name="text"><string>
+Step3 補足説明
+河川次数を踏まえ、０次谷と流送域の範囲とするポリゴンを生成する工程
+
+1. 河川次数ラスタの最小値
+   Step2で生成した流路ラスタと見比べて、過抽出とならないよう、
+   ラスタ値3～4（2～3次河川）あたりを検討する。
+  
+  【注意】
+   河川次数ラスタのラスタ値は、本来の河川次数より値が1大きい。
+   ラスタ値2であれば「1次河川」と見ること。
+
+2. 河川次数ラスタの最大値
+   基本は、河川次数ラスタの最大ラスタ値とする。
+
+3. 流送域の幅 | 推奨: 10-30(m)
+   谷ラスタの範囲から、流送域の範囲であるとして、０次谷とみなさない範囲。
+   流路からのバッファ距離にあたる。
+      </string></property>
+    </widget>
+   </item>
+
+  </layout>
+ </widget>
+</ui>

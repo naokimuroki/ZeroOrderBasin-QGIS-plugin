@@ -1,0 +1,17 @@
+[general]
+name=ZeroOrderBasin
+qgisMinimumVersion=3.44
+qgisMaximumVersion=3.44
+description=DEMラスタと接峰面ラスタとの差分から０次谷、流送域ポリゴンを抽出
+about=ZeroOrderBasinは、DEMラスタから、接峰面、谷、流路、河川次数などを演算し、０次谷と流送域ポリゴンを出力するプラグインです。
+version=1.0.1
+author=Forestgeo.info, Naoki Muroki
+email=naoki.muroki.84@forestgeo.info
+homepage=https://forestgeo.info/
+tracker=https://forestgeo.info/
+repository=https://github.com/naokimuroki
+category=raster
+icon=icon.png
+tags=forest, terrain, hydrology, 森林, 地形, 水理
+experimental=False
+deprecated=False
