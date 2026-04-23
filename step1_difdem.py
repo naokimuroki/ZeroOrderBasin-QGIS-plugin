@@ -11,7 +11,6 @@ import processing
 class step1_DifDEM(QgsProcessingAlgorithm):
 
     INPUT_DEM = 'INPUT_DEM'
-    SCALE = 'SCALE'
     TARGET_RES = 'TARGET_RES'
     CURV_TH = 'CURV_TH'
     OUTPUT = 'OUTPUT'
@@ -22,26 +21,21 @@ class step1_DifDEM(QgsProcessingAlgorithm):
             self.INPUT_DEM, '入力DEM'))
 
         self.addParameter(QgsProcessingParameterNumber(
-            self.SCALE, 
-            '平滑化サイズ(m) | 推奨: 5-20\n'
-            '小( 5)  解像度 5m, 微地形を考慮した接峰面ラスタを生成\n'
-            '大(20)  解像度20m, 微地形を排除した接峰面ラスタを生成',
-            type=QgsProcessingParameterNumber.Double,
-            defaultValue=5))
-
-        self.addParameter(QgsProcessingParameterNumber(
-            self.TARGET_RES, 
-            '接峰面ラスタの解像度(m) | 推奨：平滑化サイズに揃える',
+            self.TARGET_RES,
+            'DEMのリサンプリングサイズ(m) | 推奨: 5\n'
+            '小(1)  微地形を考慮\n'
+            '大(10) 微地形を平滑化',
             type=QgsProcessingParameterNumber.Double,
             defaultValue=5))
 
         self.addParameter(QgsProcessingParameterNumber(
             self.CURV_TH,
-            '曲率閾値（谷とみなす範囲）\n'
-            '小(-1.0)→ 急な凹地形のみを谷とみる\n'
-            '大(-0.2)→ 緩やかな凹地形も谷とみる',
+            '曲率閾値(接峰面ラスタ用の尾根抽出)\n'
+            '基本: 0\n'
+            'サンプリングが多い場合: 0.001など'
+            'サンプリングが足りない場合: -0.001 など',
             type=QgsProcessingParameterNumber.Double,
-            defaultValue=-0.5
+            defaultValue=0
         ))
 
         self.addParameter(QgsProcessingParameterRasterDestination(
@@ -50,7 +44,6 @@ class step1_DifDEM(QgsProcessingAlgorithm):
     def processAlgorithm(self, parameters, context, feedback):
 
         dem = self.parameterAsRasterLayer(parameters, self.INPUT_DEM, context)
-        scale = self.parameterAsDouble(parameters, self.SCALE, context)
         res = self.parameterAsDouble(parameters, self.TARGET_RES, context)
         curv_th = self.parameterAsDouble(parameters, self.CURV_TH, context)
         output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
@@ -58,13 +51,13 @@ class step1_DifDEM(QgsProcessingAlgorithm):
         feedback.pushInfo("=== 開始 ===")
 
         # =========================
-        # 0 DEMリサンプリング
+        # 1 DEMリサンプリング（平均）
         # =========================
         dem_resampled_path = processing.run(
             "gdal:warpreproject",
             {
                 'INPUT': dem,
-                'RESAMPLING': 1,
+                'RESAMPLING': 5,
                 'TARGET_RESOLUTION': res,
                 'OUTPUT': 'TEMPORARY_OUTPUT'
             },
@@ -72,43 +65,19 @@ class step1_DifDEM(QgsProcessingAlgorithm):
             feedback=feedback
         )['OUTPUT']
 
-        dem_resampled = QgsRasterLayer(dem_resampled_path, "dem5m")
-
+        dem_resampled = QgsRasterLayer(dem_resampled_path, "dem_resampled")
         extent = dem_resampled.extent()
 
-        sigma = (scale / res) * 2.0
-
         # =========================
-        # 1 平滑
-        # =========================
-        smooth = processing.run(
-            "sagang:gaussianfilter",
-            {
-                'INPUT': dem_resampled_path,
-                'SIGMA': sigma,
-                'RESULT': 'TEMPORARY_OUTPUT'
-            },
-            context=context,
-            feedback=feedback
-        )['RESULT']
-
-        smooth = processing.run(
-            "gdal:translate",
-            {'INPUT': smooth, 'OUTPUT': 'TEMPORARY_OUTPUT'},
-            context=context,
-            feedback=feedback
-        )['OUTPUT']
-
-        # =========================
-        # 2 曲率
+        # 2 曲率計算
         # =========================
         curv = processing.run(
             "sagang:slopeaspectcurvature",
             {
-                'ELEVATION': smooth,
+                'ELEVATION': dem_resampled_path,
                 'SLOPE': 'TEMPORARY_OUTPUT',
                 'ASPECT': 'TEMPORARY_OUTPUT',
-                'C_PLAN': 'TEMPORARY_OUTPUT'
+                'C_PROF': 'TEMPORARY_OUTPUT'
             },
             context=context,
             feedback=feedback
@@ -117,7 +86,7 @@ class step1_DifDEM(QgsProcessingAlgorithm):
         curvature = processing.run(
             "gdal:translate",
             {
-                'INPUT': curv['C_PLAN'],
+                'INPUT': curv['C_PROF'],
                 'OUTPUT': 'TEMPORARY_OUTPUT'
             },
             context=context,
@@ -125,14 +94,16 @@ class step1_DifDEM(QgsProcessingAlgorithm):
         )['OUTPUT']
 
         # =========================
-        # 3 尾根抽出
+        # 3 尾根マスク（曲率）
         # =========================
-        convex = processing.run(
+        mask = processing.run(
             "gdal:rastercalculator",
             {
                 'INPUT_A': curvature,
                 'BAND_A': 1,
-                'FORMULA': f'A > {curv_th}',
+                'FORMULA': f'(A > {curv_th})',
+                'NO_DATA': 0,
+                'RTYPE': 5,
                 'OUTPUT': 'TEMPORARY_OUTPUT'
             },
             context=context,
@@ -140,13 +111,32 @@ class step1_DifDEM(QgsProcessingAlgorithm):
         )['OUTPUT']
 
         # =========================
-        # 4 ポイント化
+        # 4 DEMにマスク適用
+        # =========================
+        ridge_dem = processing.run(
+            "gdal:rastercalculator",
+            {
+                'INPUT_A': dem_resampled_path,
+                'BAND_A': 1,
+                'INPUT_B': mask,
+                'BAND_B': 1,
+                'FORMULA': 'A * B',
+                'NO_DATA': 0,
+                'RTYPE': 5,
+                'OUTPUT': 'TEMPORARY_OUTPUT'
+            },
+            context=context,
+            feedback=feedback
+        )['OUTPUT']
+
+        # =========================
+        # 5 ポイント化（標高保持）
         # =========================
         pts = processing.run(
             "native:pixelstopoints",
             {
-                'INPUT_RASTER': convex,
-                'FIELD_NAME': 'val',
+                'INPUT_RASTER': ridge_dem,
+                'FIELD_NAME': 'z',
                 'OUTPUT': 'TEMPORARY_OUTPUT'
             },
             context=context,
@@ -154,14 +144,13 @@ class step1_DifDEM(QgsProcessingAlgorithm):
         )['OUTPUT']
 
         # =========================
-        # 5 標高付与
+        # 6 0除去
         # =========================
         pts = processing.run(
-            "native:rastersampling",
+            "native:extractbyexpression",
             {
                 'INPUT': pts,
-                'RASTERCOPY': dem_resampled_path,
-                'COLUMN_PREFIX': 'z_',
+                'EXPRESSION': '"z" > 0',
                 'OUTPUT': 'TEMPORARY_OUTPUT'
             },
             context=context,
@@ -169,13 +158,22 @@ class step1_DifDEM(QgsProcessingAlgorithm):
         )['OUTPUT']
 
         # =========================
-        # 6 IDW（注：QGIS版では、IDWでTINを代替）
+        # ポイント数チェック
+        # =========================
+        count = pts.featureCount()
+        feedback.pushInfo(f"POINT COUNT: {count}")
+
+        if count < 10:
+            raise Exception("尾根ポイント不足：閾値または解像度を調整")
+
+        # =========================
+        # 7 IDW（SAGA）
         # =========================
         surface = processing.run(
             "sagang:inversedistanceweighted",
             {
                 'POINTS': pts,
-                'FIELD': 'z_1',
+                'FIELD': 'z',
 
                 'TARGET_DEFINITION': 1,
                 'TARGET_USER_SIZE': res,
@@ -201,14 +199,14 @@ class step1_DifDEM(QgsProcessingAlgorithm):
         )['OUTPUT']
 
         # =========================
-        # 7 グリッド一致
+        # 8 グリッド一致
         # =========================
         surface_aligned = processing.run(
             "gdal:warpreproject",
             {
                 'INPUT': surface,
                 'RESAMPLING': 0,
-                'TARGET_EXTENT': dem_resampled,
+                'TARGET_EXTENT': dem_resampled.extent(),
                 'TARGET_EXTENT_CRS': dem.crs(),
                 'TARGET_RESOLUTION': res,
                 'OUTPUT': 'TEMPORARY_OUTPUT'
@@ -218,7 +216,7 @@ class step1_DifDEM(QgsProcessingAlgorithm):
         )['OUTPUT']
 
         # =========================
-        # 8 差分
+        # 9 差分（diffDEM）
         # =========================
         diff = processing.run(
             "gdal:rastercalculator",
@@ -234,7 +232,7 @@ class step1_DifDEM(QgsProcessingAlgorithm):
             feedback=feedback
         )['OUTPUT']
 
-        feedback.pushInfo("=== 完了===")
+        feedback.pushInfo("=== 完了 ===")
 
         return {self.OUTPUT: diff}
 
