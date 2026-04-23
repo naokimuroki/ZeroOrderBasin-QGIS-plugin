@@ -22,7 +22,7 @@ class ZeroOrderBasinDialog(QDialog, FORM_CLASS):
         self.valley = None
         self.stream = None
         self.order = None
-        
+
         self.init_file_widgets()
 
         QgsProject.instance().layersAdded.connect(self.populate_layers)
@@ -121,7 +121,6 @@ class ZeroOrderBasinDialog(QDialog, FORM_CLASS):
         try:
             res = processing.run("zeroorderbasin:difdem_alignment", {
                 'INPUT_DEM': dem,
-                'SCALE': float(self.spinScale.value()),
                 'TARGET_RES': float(self.spinRes.value()),
                 'CURV_TH': float(self.spinCurv.value()),
                 'OUTPUT': 'TEMPORARY_OUTPUT'
